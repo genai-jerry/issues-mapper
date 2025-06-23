@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Module Embedding Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Code Module Embedding Manager</h1>
+    <section>
+        <h2>Projects</h2>
+        <form id="project-form">
+            <input type="text" id="project-name" placeholder="Project Name" required>
+            <button type="submit">Add Project</button>
+        </form>
+        <ul id="project-list"></ul>
+    </section>
+    <section>
+        <h2>Modules</h2>
+        <form id="module-form">
+            <input type="text" id="module-name" placeholder="Module Name" required>
+            <input type="number" id="module-project-id" placeholder="Project ID" required>
+            <button type="submit">Add Module</button>
+        </form>
+        <ul id="module-list"></ul>
+    </section>
+    <section>
+        <h2>Directories</h2>
+        <form id="directory-form">
+            <input type="text" id="directory-path" placeholder="Directory Path" required>
+            <input type="number" id="directory-module-id" placeholder="Module ID" required>
+            <button type="submit">Add Directory</button>
+        </form>
+        <ul id="directory-list"></ul>
+    </section>
+    <section>
+        <h2>Files</h2>
+        <form id="file-form">
+            <input type="text" id="file-path" placeholder="File Path" required>
+            <input type="number" id="file-module-id" placeholder="Module ID" required>
+            <button type="submit">Add File</button>
+        </form>
+        <ul id="file-list"></ul>
+    </section>
+    <section>
+        <h2>Upload Python File for Embedding</h2>
+        <form id="embedding-form" enctype="multipart/form-data">
+            <input type="file" id="embedding-file" accept=".py" required>
+            <input type="number" id="embedding-file-id" placeholder="File ID" required>
+            <button type="submit">Upload & Generate Embeddings</button>
+        </form>
+        <ul id="block-list"></ul>
+    </section>
+    <script src="/static/app.js"></script>
+</body>
+</html> 
