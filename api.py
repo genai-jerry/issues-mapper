@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 import crud, schemas
 from deps import get_db
 from typing import List, Optional
 from embedding_utils import extract_python_functions, mock_generate_embedding
+from background_processor import processor
 
 router = APIRouter()
 
@@ -75,4 +76,61 @@ def generate_embeddings(file_id: int, file: UploadFile = File(...), db: Session 
         )
         block = crud.create_code_block(db, block_in)
         blocks.append(block)
-    return blocks 
+    return blocks
+
+# Background Processing Job Endpoints
+@router.post("/jobs/start/", response_model=schemas.ProcessingJob)
+async def start_processing_job(job: schemas.ProcessingJobCreate, db: Session = Depends(get_db)):
+    """Start a background processing job for a directory."""
+    # Create the job record
+    db_job = crud.create_processing_job(db, job)
+    
+    # Start the background processing
+    await processor.start_processing_job(db_job.id)
+    
+    return db_job
+
+@router.get("/jobs/", response_model=List[schemas.ProcessingJob])
+def list_processing_jobs(db: Session = Depends(get_db)):
+    """List all processing jobs."""
+    return crud.get_processing_jobs(db)
+
+@router.get("/jobs/{job_id}", response_model=schemas.ProcessingJob)
+def get_processing_job(job_id: int, db: Session = Depends(get_db)):
+    """Get a specific processing job with its progress."""
+    job = crud.get_processing_job(db, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+@router.post("/jobs/{job_id}/resume/")
+async def resume_processing_job(job_id: int, db: Session = Depends(get_db)):
+    """Resume a failed or incomplete processing job."""
+    job = crud.get_processing_job(db, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job.status == "completed":
+        raise HTTPException(status_code=400, detail="Job is already completed")
+    
+    # Resume the job
+    await processor.start_processing_job(job_id)
+    
+    return {"message": f"Job {job_id} resumed successfully"}
+
+@router.get("/jobs/{job_id}/tasks/", response_model=List[schemas.ProcessingTask])
+def get_processing_tasks(job_id: int, db: Session = Depends(get_db)):
+    """Get all tasks for a specific job."""
+    return crud.get_processing_tasks(db, job_id=job_id)
+
+@router.post("/jobs/resume-all/")
+async def resume_all_incomplete_jobs(db: Session = Depends(get_db)):
+    """Resume all incomplete jobs (useful for server restart)."""
+    incomplete_jobs = crud.get_incomplete_jobs(db)
+    resumed_count = 0
+    
+    for job in incomplete_jobs:
+        await processor.start_processing_job(job.id)
+        resumed_count += 1
+    
+    return {"message": f"Resumed {resumed_count} incomplete jobs"} 

@@ -70,4 +70,99 @@ def get_code_blocks(db: Session, file_id: int = None):
     query = db.query(models.CodeBlock)
     if file_id:
         query = query.filter(models.CodeBlock.file_id == file_id)
-    return query.all() 
+    return query.all()
+
+# ProcessingJob CRUD
+
+def create_processing_job(db: Session, job: schemas.ProcessingJobCreate):
+    db_job = models.ProcessingJob(
+        project_id=job.project_id,
+        directory=job.directory
+    )
+    db.add(db_job)
+    db.commit()
+    db.refresh(db_job)
+    return db_job
+
+def get_processing_job(db: Session, job_id: int):
+    return db.query(models.ProcessingJob).filter(models.ProcessingJob.id == job_id).first()
+
+def get_processing_jobs(db: Session):
+    return db.query(models.ProcessingJob).all()
+
+def get_incomplete_jobs(db: Session):
+    """Get jobs that are pending or running for resuming on server restart."""
+    return db.query(models.ProcessingJob).filter(
+        models.ProcessingJob.status.in_(["pending", "running"])
+    ).all()
+
+def update_job_status(db: Session, job_id: int, status: str, **kwargs):
+    """Update job status and other fields."""
+    db_job = get_processing_job(db, job_id)
+    if db_job:
+        db_job.status = status
+        for key, value in kwargs.items():
+            if hasattr(db_job, key):
+                setattr(db_job, key, value)
+        db.commit()
+        db.refresh(db_job)
+    return db_job
+
+def update_job_progress(db: Session, job_id: int, processed_files: int = None, processed_functions: int = None):
+    """Update job progress counters."""
+    db_job = get_processing_job(db, job_id)
+    if db_job:
+        if processed_files is not None:
+            db_job.processed_files = processed_files
+        if processed_functions is not None:
+            db_job.processed_functions = processed_functions
+        db.commit()
+        db.refresh(db_job)
+    return db_job
+
+# ProcessingTask CRUD
+
+def create_processing_task(db: Session, task: schemas.ProcessingTaskCreate):
+    db_task = models.ProcessingTask(
+        job_id=task.job_id,
+        file_path=task.file_path,
+        function_name=task.function_name,
+        status=task.status,
+        error_message=task.error_message
+    )
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+def get_processing_tasks(db: Session, job_id: int = None):
+    query = db.query(models.ProcessingTask)
+    if job_id:
+        query = query.filter(models.ProcessingTask.job_id == job_id)
+    return query.all()
+
+def get_pending_tasks(db: Session, job_id: int):
+    """Get pending tasks for a specific job."""
+    return db.query(models.ProcessingTask).filter(
+        models.ProcessingTask.job_id == job_id,
+        models.ProcessingTask.status == "pending"
+    ).all()
+
+def update_task_status(db: Session, task_id: int, status: str, error_message: str = None):
+    """Update task status and error message."""
+    db_task = db.query(models.ProcessingTask).filter(models.ProcessingTask.id == task_id).first()
+    if db_task:
+        db_task.status = status
+        if error_message:
+            db_task.error_message = error_message
+        db.commit()
+        db.refresh(db_task)
+    return db_task
+
+def get_task_by_file_and_function(db: Session, job_id: int, file_path: str, function_name: str):
+    """Get a specific task by job_id, file_path, and function_name."""
+    return db.query(models.ProcessingTask).filter(
+        models.ProcessingTask.job_id == job_id,
+        models.ProcessingTask.file_path == file_path,
+        models.ProcessingTask.function_name == function_name
+    ).first() 

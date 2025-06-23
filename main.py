@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 from db import engine, Base
 from api import router as api_router
+from background_processor import processor
 
 app = FastAPI()
 
@@ -11,8 +12,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     Base.metadata.create_all(bind=engine)
+    # Resume any incomplete jobs on server startup
+    await processor.resume_incomplete_jobs()
 
 app.include_router(api_router)
 
