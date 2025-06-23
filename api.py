@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Query
 from sqlalchemy.orm import Session
 import crud, schemas
 from deps import get_db
 from typing import List, Optional
 from embedding_utils import extract_python_functions, mock_generate_embedding
 from background_processor import processor
+from models import CodeFile
 
 router = APIRouter()
 
@@ -119,9 +120,17 @@ async def resume_processing_job(job_id: int, db: Session = Depends(get_db)):
     return {"message": f"Job {job_id} resumed successfully"}
 
 @router.get("/jobs/{job_id}/tasks/", response_model=List[schemas.ProcessingTask])
-def get_processing_tasks(job_id: int, db: Session = Depends(get_db)):
-    """Get all tasks for a specific job."""
-    return crud.get_processing_tasks(db, job_id=job_id)
+def get_processing_tasks(job_id: int, file_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """Get all tasks for a specific job, optionally filtered by file_id."""
+    tasks = crud.get_processing_tasks(db, job_id=job_id)
+    if file_id is not None:
+        # Filter tasks by file_id (match file_path to CodeFile.path)
+        file = db.query(CodeFile).filter(CodeFile.id == file_id).first()
+        if file:
+            tasks = [t for t in tasks if t.file_path == file.path]
+        else:
+            tasks = []
+    return tasks
 
 @router.post("/jobs/resume-all/")
 async def resume_all_incomplete_jobs(db: Session = Depends(get_db)):
@@ -133,4 +142,10 @@ async def resume_all_incomplete_jobs(db: Session = Depends(get_db)):
         await processor.start_processing_job(job.id)
         resumed_count += 1
     
-    return {"message": f"Resumed {resumed_count} incomplete jobs"} 
+    return {"message": f"Resumed {resumed_count} incomplete jobs"}
+
+@router.post("/jobs/clear/")
+def clear_all_jobs(db: Session = Depends(get_db)):
+    """Delete all processing jobs and their tasks."""
+    crud.delete_all_processing_jobs(db)
+    return {"message": "All jobs and tasks cleared."} 

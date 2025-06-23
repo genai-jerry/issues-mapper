@@ -165,4 +165,9 @@ def get_task_by_file_and_function(db: Session, job_id: int, file_path: str, func
         models.ProcessingTask.job_id == job_id,
         models.ProcessingTask.file_path == file_path,
         models.ProcessingTask.function_name == function_name
-    ).first() 
+    ).first()
+
+def delete_all_processing_jobs(db: Session):
+    db.query(models.ProcessingTask).delete()
+    db.query(models.ProcessingJob).delete()
+    db.commit() 

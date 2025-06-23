@@ -131,6 +131,19 @@ async function fetchAndRenderDirectories() {
         li.innerHTML = `#${d.id}: ${d.path} (Module ${d.module_id})`;
         list.appendChild(li);
     });
+    // Render checkboxes for job form
+    const jobDirList = document.getElementById('job-directories-list');
+    jobDirList.innerHTML = '';
+    dirs.forEach(d => {
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = d.id;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${d.path} (Module ${d.module_id})`));
+        jobDirList.appendChild(label);
+    });
 }
 
 // --- Files ---
@@ -197,12 +210,24 @@ embeddingForm.onsubmit = async (e) => {
 const jobForm = document.getElementById('job-form');
 jobForm.onsubmit = async (e) => {
     e.preventDefault();
-    const directory = document.getElementById('job-directory').value;
-    await fetch('/jobs/start/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_id: selectedProject.id, directory })
-    });
+    const checked = Array.from(document.querySelectorAll('#job-directories-list input[type=checkbox]:checked'));
+    if (checked.length === 0) return;
+    for (const cb of checked) {
+        const dirId = Number(cb.value);
+        // Find the directory path from the directories list
+        const dir = Array.from(document.getElementById('directory-list').children).find(li => li.textContent.includes(`(${dirId})`));
+        // Instead, fetch the directory info from the API
+        const res = await fetch('/directories/');
+        const dirs = await res.json();
+        const dirObj = dirs.find(d => d.id === dirId);
+        if (dirObj) {
+            await fetch('/jobs/start/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_id: selectedProject.id, directory: dirObj.path })
+            });
+        }
+    }
     jobForm.reset();
     fetchAndRenderJobs();
 };
@@ -213,12 +238,22 @@ resumeAllJobsBtn.onclick = async () => {
     fetchAndRenderJobs();
 };
 
+const clearAllJobsBtn = document.getElementById('clear-all-jobs');
+clearAllJobsBtn.onclick = async () => {
+    await fetch('/jobs/clear/', { method: 'POST' });
+    fetchAndRenderJobs();
+};
+
 async function fetchAndRenderJobs() {
     const res = await fetch('/jobs/');
     const jobs = (await res.json()).filter(j => j.project_id === selectedProject.id);
     const jobList = document.getElementById('job-list');
     jobList.innerHTML = '';
-    jobs.forEach(job => {
+    for (const job of jobs) {
+        // Fetch the number of tasks for this job
+        const taskRes = await fetch(`/jobs/${job.id}/tasks/`);
+        const tasks = await taskRes.json();
+        const numTasks = tasks.length;
         const li = document.createElement('li');
         const progress = job.total_functions > 0 ? 
             Math.round((job.processed_functions / job.total_functions) * 100) : 0;
@@ -227,12 +262,43 @@ async function fetchAndRenderJobs() {
             <div>Directory: ${job.directory}</div>
             <div>Progress: ${job.processed_functions}/${job.total_functions} functions (${progress}%)</div>
             <div>Files: ${job.processed_files}/${job.total_files}</div>
+            <div>Tasks: ${numTasks}</div>
             <div>Created: ${new Date(job.created_at).toLocaleString()}</div>
-            ${job.error_message ? `<div style="color: red;">Error: ${job.error_message}</div>` : ''}
-            ${job.status !== 'completed' ? `<button onclick="resumeJob(${job.id})">Resume</button>` : ''}
+            ${job.error_message ? `<div style=\"color: red;\">Error: ${job.error_message}</div>` : ''}
+            ${job.status !== 'completed' ? `<button onclick=\"resumeJob(${job.id})\">Resume</button>` : ''}
+            <button onclick="showJobFunctions(${job.id})">Show Functions</button>
+            <div id="job-functions-${job.id}" class="job-functions-list" style="display:none;"></div>
         `;
         jobList.appendChild(li);
+    }
+}
+
+window.showJobFunctions = async function(jobId) {
+    // Fetch all tasks for this job
+    const res = await fetch(`/jobs/${jobId}/tasks/`);
+    const tasks = await res.json();
+    // Group by file_path
+    const files = {};
+    tasks.forEach(t => {
+        if (!files[t.file_path]) files[t.file_path] = [];
+        files[t.file_path].push(t);
     });
+    const container = document.getElementById(`job-functions-${jobId}`);
+    container.innerHTML = '';
+    Object.entries(files).forEach(([filePath, funcs]) => {
+        const fileDiv = document.createElement('div');
+        fileDiv.style.margin = '10px 0';
+        fileDiv.innerHTML = `<b>${filePath}</b>`;
+        const ul = document.createElement('ul');
+        funcs.forEach(f => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${f.function_name}</span> <span style='color:${f.status === 'completed' ? 'green' : f.status === 'failed' ? 'red' : 'orange'}'>[${f.status}]</span>`;
+            ul.appendChild(li);
+        });
+        fileDiv.appendChild(ul);
+        container.appendChild(fileDiv);
+    });
+    container.style.display = container.style.display === 'none' ? '' : 'none';
 }
 
 async function resumeJob(jobId) {

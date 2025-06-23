@@ -56,10 +56,11 @@
         <div>
             <h3>Background Processing Jobs</h3>
             <form id="job-form">
-                <input type="text" id="job-directory" placeholder="Directory Path" required>
-                <button type="submit">Start Processing Job</button>
+                <div id="job-directories-list"></div>
+                <button type="submit">Start Processing Job(s)</button>
             </form>
             <button id="resume-all-jobs">Resume All Incomplete Jobs</button>
+            <button id="clear-all-jobs">Clear All Jobs</button>
             <ul id="job-list"></ul>
         </div>
     </section>
