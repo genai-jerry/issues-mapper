@@ -2,9 +2,16 @@ import os
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Optional
-import crud, models, schemas
-from embedding_utils import extract_python_functions, mock_generate_embedding
-from db import SessionLocal
+from . import crud, models, schemas
+try:
+    from embeddings.embedding_utils import extract_python_functions, generate_embedding
+except ImportError:
+    # Fallback for when running as module
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from embeddings.embedding_utils import extract_python_functions, generate_embedding
+from .database import SessionLocal
 
 class BackgroundProcessor:
     def __init__(self, max_workers: int = 4):
@@ -137,7 +144,7 @@ class BackgroundProcessor:
             existing_task = crud.get_task_by_file_and_function(db, job_id, file_path, func['name'])
             if existing_task and existing_task.status == "completed":
                 return
-            embedding = mock_generate_embedding(func['code'])
+            embedding = generate_embedding(func['code'])
             file_record = db.query(models.CodeFile).filter(
                 models.CodeFile.path == file_path
             ).first()

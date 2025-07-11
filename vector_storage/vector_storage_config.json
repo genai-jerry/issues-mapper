@@ -1,0 +1,154 @@
+{
+  "_comment": "Vector Storage Configuration for Issues Manager MVP",
+  "_description": "Configuration examples for different vector storage backends",
+  
+  "storage_types": {
+    "_comment": "Available storage types: inmemory, chroma, pinecone",
+    "default": "inmemory",
+    
+    "inmemory": {
+      "_comment": "In-memory storage for testing and development",
+      "_description": "Fast, no persistence, data lost on restart",
+      "type": "inmemory",
+      "config": {}
+    },
+    
+    "chroma": {
+      "_comment": "ChromaDB for local development and small-scale production",
+      "_description": "Local persistent storage, good for development",
+      "type": "chroma",
+      "config": {
+        "persist_directory": "./chroma_db",
+        "use_http_client": false,
+        "host": "localhost",
+        "port": 8000
+      }
+    },
+    
+    "chroma_remote": {
+      "_comment": "ChromaDB with HTTP client for remote server",
+      "_description": "Connect to remote ChromaDB server",
+      "type": "chroma",
+      "config": {
+        "use_http_client": true,
+        "host": "localhost",
+        "port": 8000
+      }
+    },
+    
+    "pinecone": {
+      "_comment": "Pinecone for production-scale applications",
+      "_description": "Cloud-based vector database, scalable",
+      "type": "pinecone",
+      "config": {
+        "api_key": "your-pinecone-api-key",
+        "environment": "us-west1-gcp"
+      }
+    }
+  },
+  
+  "collections": {
+    "_comment": "Predefined collections for different use cases",
+    
+    "code_snippets": {
+      "_description": "Store and search code snippets",
+      "dimension": 1536,
+      "metadata_schema": {
+        "language": "string",
+        "category": "string",
+        "difficulty": "string",
+        "tags": "array"
+      }
+    },
+    
+    "documentation": {
+      "_description": "Store and search documentation",
+      "dimension": 1536,
+      "metadata_schema": {
+        "framework": "string",
+        "version": "string",
+        "type": "string",
+        "author": "string"
+      }
+    },
+    
+    "issues": {
+      "_description": "Store and search issue descriptions",
+      "dimension": 1536,
+      "metadata_schema": {
+        "status": "string",
+        "priority": "string",
+        "assignee": "string",
+        "labels": "array",
+        "created_date": "date"
+      }
+    },
+    
+    "conversations": {
+      "_description": "Store and search conversation history",
+      "dimension": 1536,
+      "metadata_schema": {
+        "user_id": "string",
+        "session_id": "string",
+        "timestamp": "datetime",
+        "context": "string"
+      }
+    }
+  },
+  
+  "search_settings": {
+    "_comment": "Default search parameters",
+    "default_limit": 10,
+    "max_limit": 100,
+    "similarity_threshold": 0.7,
+    "enable_metadata_filtering": true
+  },
+  
+  "performance_settings": {
+    "_comment": "Performance optimization settings",
+    "batch_size": 100,
+    "enable_caching": true,
+    "cache_ttl": 3600,
+    "max_concurrent_requests": 10
+  },
+  
+  "_usage_examples": {
+    "_comment": "Example usage patterns",
+    
+    "basic_usage": {
+      "_description": "Basic vector storage usage",
+      "code": "from llm import EmbeddingManager\n\n# Create with default in-memory storage\nmanager = EmbeddingManager(vector_storage_type='inmemory')\n\n# Create collection\nmanager.create_collection('my_collection')\n\n# Store document\ndoc_id = manager.store_embedding('my_collection', 'content', {'tag': 'example'})\n\n# Search\nresults = manager.search_similar('my_collection', 'query', limit=5)"
+    },
+    
+    "chroma_usage": {
+      "_description": "ChromaDB usage",
+      "code": "from llm import EmbeddingManager\n\n# Create with ChromaDB storage\nmanager = EmbeddingManager(\n    vector_storage_type='chroma',\n    vector_storage_config={\n        'persist_directory': './chroma_db'\n    }\n)\n\n# Use same interface as in-memory"
+    },
+    
+    "pinecone_usage": {
+      "_description": "Pinecone usage",
+      "code": "from llm import EmbeddingManager\n\n# Create with Pinecone storage\nmanager = EmbeddingManager(\n    vector_storage_type='pinecone',\n    vector_storage_config={\n        'api_key': 'your-key',\n        'environment': 'us-west1-gcp'\n    }\n)\n\n# Use same interface as other storage types"
+    },
+    
+    "storage_switching": {
+      "_description": "Switch between storage types",
+      "code": "# Start with in-memory\nmanager = EmbeddingManager(vector_storage_type='inmemory')\n\n# Switch to ChromaDB\nmanager.switch_vector_storage('chroma', {'persist_directory': './chroma_db'})\n\n# Switch to Pinecone\nmanager.switch_vector_storage('pinecone', {'api_key': 'key', 'environment': 'env'})"
+    }
+  },
+  
+  "_environment_variables": {
+    "_comment": "Environment variables for configuration",
+    "VECTOR_STORAGE_TYPE": "Set default storage type (inmemory, chroma, pinecone)",
+    "CHROMA_PERSIST_DIR": "Set ChromaDB persistence directory",
+    "PINECONE_API_KEY": "Set Pinecone API key",
+    "PINECONE_ENVIRONMENT": "Set Pinecone environment"
+  },
+  
+  "_security_notes": {
+    "_comment": "Security considerations",
+    "api_keys": "Never commit API keys to version control",
+    "persistence": "ChromaDB data is stored locally - secure the directory",
+    "metadata": "Be careful with sensitive data in metadata",
+    "access_control": "Implement proper access control for production"
+  }
+} 

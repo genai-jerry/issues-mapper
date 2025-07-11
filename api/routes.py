@@ -1,11 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Query
 from sqlalchemy.orm import Session
-import crud, schemas
-from deps import get_db
 from typing import List, Optional
-from embedding_utils import extract_python_functions, mock_generate_embedding
-from background_processor import processor
-from models import CodeFile
+
+try:
+    from core import crud, schemas
+    from core.models import CodeFile
+    from core.background_processor import processor
+    from embeddings.embedding_utils import extract_python_functions, generate_embedding
+except ImportError:
+    # Fallback for when running as module
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from core import crud, schemas
+    from core.models import CodeFile
+    from core.background_processor import processor
+    from embeddings.embedding_utils import extract_python_functions, generate_embedding
+from .dependencies import get_db
 
 router = APIRouter()
 
@@ -71,7 +82,7 @@ def generate_embeddings(file_id: int, file: UploadFile = File(...), db: Session 
     functions = extract_python_functions(source_code)
     blocks = []
     for func in functions:
-        embedding = mock_generate_embedding(func['code'])
+        embedding = generate_embedding(func['code'])
         block_in = schemas.CodeBlockCreate(
             name=func['name'], code=func['code'], file_id=file_id, embedding=embedding
         )

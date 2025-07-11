@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
-from db import engine, Base
-from api import router as api_router
-from background_processor import processor
+from core.database import engine, Base
+from api.routes import router as api_router
+from core.background_processor import processor
 
 app = FastAPI()
 

@@ -1,0 +1,24 @@
+{
+  "openai_api_key": "sk-openai-api-key-here",
+  "openai_embedding_model": "text-embedding-ada-002",
+  "openai_chat_model": "gpt-3.5-turbo",
+  
+  "huggingface_api_key": "hf-your-huggingface-api-key-here",
+  "huggingface_embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "huggingface_chat_model": "microsoft/DialoGPT-medium",
+  
+  "anthropic_api_key": "sk-ant-your-anthropic-api-key-here",
+  "anthropic_chat_model": "claude-3-sonnet-20240229",
+  
+  "openrouter_api_key": "openrouter-api-key",
+  "openrouter_chat_model": "tencent/hunyuan-a13b-instruct:free",
+  "openrouter_embedding_model": "openai/text-embedding-ada-002",
+  
+  "default_embedding_provider": "openai",
+  "default_chat_provider": "openrouter",
+  "temperature": 0.7,
+  "max_tokens": 1000,
+  
+  "enable_cache": true,
+  "cache_dir": ".llm_cache"
+} 

@@ -1,0 +1,112 @@
+{
+  "_comment": "LLM Configuration for Issues Manager MVP",
+  "_description": "This file configures the LLM package with different providers and settings",
+  "_usage": "Copy this file to llm_config.json and update with your actual API keys",
+  
+  "providers": {
+    "_comment": "API Keys - Replace with your actual keys",
+    "openai": {
+      "api_key": "sk-your-openai-api-key-here",
+      "embedding_model": "text-embedding-ada-002",
+      "chat_model": "gpt-3.5-turbo",
+      "_note": "OpenAI models require API key. Free tier available."
+    },
+    
+    "huggingface": {
+      "api_key": "hf-your-huggingface-api-key-here",
+      "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "chat_model": "microsoft/DialoGPT-medium",
+      "_note": "HuggingFace can work without API key for local models"
+    },
+    
+    "anthropic": {
+      "api_key": "sk-ant-your-anthropic-api-key-here",
+      "chat_model": "claude-3-sonnet-20240229",
+      "_note": "Anthropic only provides chat models, not embeddings"
+    },
+    
+    "openrouter": {
+      "api_key": "sk-or-your-openrouter-api-key-here",
+      "chat_model": "openai/gpt-3.5-turbo",
+      "embedding_model": "openai/text-embedding-ada-002",
+      "_note": "OpenRouter provides access to multiple LLM providers through a single API"
+    }
+  },
+  
+  "settings": {
+    "_comment": "Default provider settings",
+    "default_embedding_provider": "openai",
+    "default_chat_provider": "openai",
+    
+    "_comment": "Model parameters",
+    "temperature": 0.7,
+    "max_tokens": 1000,
+    
+    "_comment": "Caching settings",
+    "enable_cache": true,
+    "cache_dir": ".llm_cache"
+  },
+  
+  "examples": {
+    "_comment": "Example configurations for different scenarios",
+    
+    "development": {
+      "_comment": "For development/testing - uses local models",
+      "default_embedding_provider": "huggingface",
+      "default_chat_provider": "huggingface",
+      "temperature": 0.5,
+      "max_tokens": 500,
+      "enable_cache": true
+    },
+    
+    "production_openai": {
+      "_comment": "Production with OpenAI",
+      "default_embedding_provider": "openai",
+      "default_chat_provider": "openai",
+      "temperature": 0.3,
+      "max_tokens": 2000,
+      "enable_cache": true
+    },
+    
+    "production_anthropic": {
+      "_comment": "Production with Anthropic Claude",
+      "default_embedding_provider": "openai",
+      "default_chat_provider": "anthropic",
+      "temperature": 0.2,
+      "max_tokens": 4000,
+      "enable_cache": true
+    },
+    
+    "cost_optimized": {
+      "_comment": "Cost-optimized configuration",
+      "default_embedding_provider": "huggingface",
+      "default_chat_provider": "openai",
+      "temperature": 0.7,
+      "max_tokens": 500,
+      "enable_cache": true
+    },
+    
+    "openrouter_setup": {
+      "_comment": "OpenRouter configuration - access multiple providers",
+      "default_embedding_provider": "openrouter",
+      "default_chat_provider": "openrouter",
+      "temperature": 0.7,
+      "max_tokens": 1000,
+      "enable_cache": true
+    }
+  },
+  
+  "_security_note": "Never commit API keys to version control. Use environment variables in production.",
+  "_environment_variables": {
+    "OPENAI_API_KEY": "Set this for OpenAI access",
+    "HUGGINGFACE_API_KEY": "Set this for HuggingFace access",
+    "ANTHROPIC_API_KEY": "Set this for Anthropic access",
+    "OPENROUTER_API_KEY": "Set this for OpenRouter access",
+    "OPENROUTER_CHAT_MODEL": "Override OpenRouter chat model",
+    "OPENROUTER_EMBEDDING_MODEL": "Override OpenRouter embedding model",
+    "DEFAULT_EMBEDDING_PROVIDER": "Override default embedding provider",
+    "DEFAULT_CHAT_PROVIDER": "Override default chat provider",
+    "LLM_TEMPERATURE": "Override temperature setting",
+    "LLM_MAX_TOKENS": "Override max tokens setting"
+  }
+} 

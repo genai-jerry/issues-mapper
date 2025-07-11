@@ -68,3 +68,6 @@ This prototype will:
 ---
 
 Development will proceed by first setting up the database models and FastAPI structure, then implementing the API endpoints, and finally adding code block extraction and embedding generation. 
+
+
+For story point fine tuning - https://arxiv.org/abs/1609.00489
